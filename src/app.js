@@ -30,12 +30,13 @@ app.use(
   cors({
     credentials: true,
     origin: [
-      "https://global-learning-bridge-charity-proj.vercel.app",
       "http://localhost:5173",
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   })
 );
+
+
 
 app.use(morgan("dev"));
 app.use(cookieParser());
@@ -47,24 +48,31 @@ app.use("/logos", express.static(path.join(__dirname, "public/logos")));
 
 //Exclude Parse Webhook
 
-app.use((req, res, next) => {
-  if (req.originalUrl === "/api/payments/webhook") {
+app.use((req, res, next) =>
+{
+  if (req.originalUrl === "/api/payments/webhook")
+  {
     next();
-  } else {
+  } else
+  {
     express.json()(req, res, next);
   }
 });
-app.use((req, res, next) => {
-  if (req.originalUrl === "/api/payments/webhook") {
+app.use((req, res, next) =>
+{
+  if (req.originalUrl === "/api/payments/webhook")
+  {
     next();
-  } else {
+  } else
+  {
     express.urlencoded({ extended: true })(req, res, next);
   }
 });
 
 // attach io to req for controllers
 //================================
-app.use((req, res, next) => {
+app.use((req, res, next) =>
+{
   req.io = io;
   next();
 });

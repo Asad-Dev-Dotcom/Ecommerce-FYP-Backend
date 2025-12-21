@@ -8,25 +8,29 @@ import { returnMailPage } from "../utils/htmlPages.js";
 import { JWTService } from "../utils/jwtService.js";
 import { sendMail } from "../utils/resendMail.js";
 import { sendToken } from "../utils/sendToken.js";
-import {
+import
+{
   removeFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
-import {
+import
+{
   accessTokenOptions,
   refreshTokenOptions,
 } from "../configs/constants.js";
 
 // create admin
 // -----------
-const register = asyncHandler(async (req, res, next) => {
+const register = asyncHandler(async (req, res, next) =>
+{
   if (!req?.body)
     return next(new CustomError(400, "Please provide all required fields"));
 
   const { name, email, password, phone, gender, companyName, designation } =
     req.body;
 
-  if (!name || !email || !password) {
+  if (!name || !email || !password)
+  {
     return next(new CustomError(400, "Name, Email and Password are required"));
   }
 
@@ -35,7 +39,63 @@ const register = asyncHandler(async (req, res, next) => {
     return next(new CustomError(403, "Email already exists"));
 
   let imageData = null;
-  if (req.file) {
+  if (req.file)
+  {
+    const uploadedImage = await uploadOnCloudinary(req.file, "auth");
+    if (!uploadedImage)
+      return next(new CustomError(400, "Error while uploading image"));
+    imageData = {
+      public_id: uploadedImage.public_id,
+      url: uploadedImage.secure_url,
+    };
+  }
+
+  const newUser = await Auth.create({
+    name,
+    email,
+    password,
+    phone,
+    role: "admin",
+    gender,
+    companyName,
+    designation,
+    image: imageData,
+  });
+
+  if (!newUser)
+    return next(new CustomError(400, "Error while registering user"));
+
+  await sendToken(
+    res,
+    next,
+    newUser,
+    201,
+    "Your account registered successfully"
+  );
+});
+
+// sign user
+// -----------
+const signup = asyncHandler(async (req, res, next) =>
+{
+  if (!req?.body)
+    return next(new CustomError(400, "Please provide all required fields"));
+
+  const { name, email, password, phone, gender, companyName, designation } =
+    req.body;
+
+  if (!name || !email || !password)
+  {
+    return next(new CustomError(400, "Name, Email and Password are required"));
+  }
+
+  const existingUser = await Auth.findOne({ email });
+  if (existingUser?._id)
+    return next(new CustomError(403, "Email already exists"));
+
+  let imageData = null;
+  if (req.file)
+  {
     const uploadedImage = await uploadOnCloudinary(req.file, "auth");
     if (!uploadedImage)
       return next(new CustomError(400, "Error while uploading image"));
@@ -71,19 +131,23 @@ const register = asyncHandler(async (req, res, next) => {
 
 // login
 // -------
-const login = asyncHandler(async (req, res, next) => {
+const login = asyncHandler(async (req, res, next) =>
+{
   const { email, password } = req.body;
-  if (!email || !password) {
+  if (!email || !password)
+  {
     return next(new CustomError(400, "Please provide both email and password"));
   }
 
   const user = await Auth.findOne({ email }).select("+password");
-  if (!user) {
+  if (!user)
+  {
     return next(new CustomError(400, "Wrong email or password"));
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
+  if (!isMatch)
+  {
     return next(new CustomError(400, "Wrong email or password"));
   }
 
@@ -92,7 +156,8 @@ const login = asyncHandler(async (req, res, next) => {
 
 // logout
 // ---------
-const logout = asyncHandler(async (req, res, next) => {
+const logout = asyncHandler(async (req, res, next) =>
+{
   const refreshToken = req?.cookies?.[getEnv("REFRESH_TOKEN_NAME")];
   if (refreshToken) await JWTService().removeRefreshToken(refreshToken);
   res.cookie(getEnv("ACCESS_TOKEN_NAME"), "", {
@@ -112,7 +177,8 @@ const logout = asyncHandler(async (req, res, next) => {
 
 // forget password
 // ---------------
-const forgetPassword = asyncHandler(async (req, res, next) => {
+const forgetPassword = asyncHandler(async (req, res, next) =>
+{
   if (!req?.body) return next(new CustomError(400, "Please Provide Email"));
   const { email } = req.body;
   if (!email) return next(new CustomError(400, "Please Provide Email"));
@@ -134,7 +200,8 @@ const forgetPassword = asyncHandler(async (req, res, next) => {
 
 // reset you password
 // ------------------
-const resetPassword = asyncHandler(async (req, res, next) => {
+const resetPassword = asyncHandler(async (req, res, next) =>
+{
   if (!req?.body)
     return next(
       new CustomError(400, "Please Provide Reset Token and New Password")
@@ -162,15 +229,18 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 
 // get My Profile
 // --------------
-const getMyProfile = asyncHandler(async (req, res, next) => {
+const getMyProfile = asyncHandler(async (req, res, next) =>
+{
   const userId = req?.user?._id;
 
-  if (!isValidObjectId(userId)) {
+  if (!isValidObjectId(userId))
+  {
     return next(new CustomError(400, "Invalid user ID"));
   }
 
   const user = await Auth.findById(userId).select("-password -__v");
-  if (!user) {
+  if (!user)
+  {
     return next(new CustomError(404, "User not found"));
   }
 
@@ -182,7 +252,8 @@ const getMyProfile = asyncHandler(async (req, res, next) => {
 
 // update my profile
 // -----------------
-const updateMyProfile = asyncHandler(async (req, res, next) => {
+const updateMyProfile = asyncHandler(async (req, res, next) =>
+{
   const userId = req?.user?._id;
   if (!isValidObjectId(userId))
     return next(new CustomError(401, "Invalid User Id"));
@@ -202,7 +273,8 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
     !companyName &&
     !designation &&
     !image
-  ) {
+  )
+  {
     return next(new CustomError(403, "Please Provide at least one field"));
   }
   if (name) user.name = name;
@@ -211,7 +283,8 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
   if (gender) user.gender = gender;
   if (companyName) user.companyName = companyName;
   if (designation) user.designation = designation;
-  if (image) {
+  if (image)
+  {
     if (user?.image?.public_id)
       await removeFromCloudinary(user?.image?.public_id, "image");
     const newImage = await uploadOnCloudinary(image, "auth");
@@ -227,7 +300,8 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
   });
 });
 
-export {
+export
+{
   forgetPassword,
   getMyProfile,
   login,
@@ -235,4 +309,5 @@ export {
   register,
   resetPassword,
   updateMyProfile,
+  signup
 };

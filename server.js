@@ -8,11 +8,13 @@ console.log("hello")
 
 const port = getEnv("PORT");
 
-(async () => {
+(async () =>
+{
   await configureCloudinary();
   await connectDB(getEnv("MONGODB_URL"));
-  await initNotificationWatcher(io);
-  server.listen(port, () => {
+  // await initNotificationWatcher(io);
+  server.listen(port, () =>
+  {
     console.log(`Server running on port ${port}`);
   });
 })();
