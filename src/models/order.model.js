@@ -80,6 +80,10 @@ const orderSchema = new mongoose.Schema(
       enum: ["online", "cash_on_delivery"],
       default: "online",
     },
+    cancelledBy: {
+      type: String,
+      enum: ["client", "admin"],
+    },
   },
   { timestamps: true }
 );

@@ -231,6 +231,11 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     order.trackingNumber = trackingNumber;
   }
 
+  // Set cancelledBy if admin is cancelling the order
+  if (status === "cancelled") {
+    order.cancelledBy = "admin";
+  }
+
   await order.save();
   await order.populate("customer", "name email");
 
@@ -275,6 +280,7 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
   }
 
   order.status = "cancelled";
+  order.cancelledBy = "client";
   await order.save();
   await order.populate("customer", "name email");
 

@@ -14,7 +14,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
     return next(new CustomError(401, "Unauthorized"));
   }
 
-  const { name, description, price, category, stock, is_flash_sale, flash_sale_price, existingImages } = req.body;
+  const { name, description, price, category, stock, is_flash_sale, flash_sale_price, existingImages, is_featured } = req.body;
   const files = req.files;
 
   if (!name || !description || !price || !category || !stock) {
@@ -51,6 +51,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
     stock: parseInt(stock),
     images,
     owner: ownerId,
+    is_featured: is_featured === true ? true : false,
   };
 
   // Add flash sale data if provided
@@ -71,11 +72,60 @@ const createProduct = asyncHandler(async (req, res, next) => {
 });
 
 const getAllProducts = asyncHandler(async (req, res, next) => {
-  // apply filters, pagination, etc. as needed
-  const products = await Product.find().populate('owner', 'name email');
+  const { page = 1, limit = 20, category, minPrice, maxPrice, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+
+  // Build query object
+  const query = {};
+
+  // Category filter
+  if (category) {
+    query.category = { $regex: category, $options: 'i' };
+  }
+
+  // Price range filter
+  if (minPrice || maxPrice) {
+    query.price = {};
+    if (minPrice) query.price.$gte = parseFloat(minPrice);
+    if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+  }
+
+  // Search filter (name and description)
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { category: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  // Pagination
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Sorting
+  const sortOptions = {};
+  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+  // Execute query with filters, sorting and pagination
+  const products = await Product.find(query)
+    .populate('owner', 'name email')
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Get total count for pagination
+  const totalProducts = await Product.countDocuments(query);
+  const totalPages = Math.ceil(totalProducts / parseInt(limit));
+
   res.status(200).json({
     success: true,
     data: products,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages,
+      totalProducts,
+      hasNext: parseInt(page) < totalPages,
+      hasPrev: parseInt(page) > 1,
+    },
   });
 });
 
@@ -91,6 +141,58 @@ const getOneProduct = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     data: product,
+  });
+});
+
+const getProductsByCategory = asyncHandler(async (req, res, next) => {
+  const { categoryName } = req.params;
+  const { page = 1, limit = 20, minPrice, maxPrice, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+
+  if (!categoryName) {
+    return next(new CustomError(400, "Category name is required"));
+  }
+
+  // Build query object
+  const query = {
+    category: { $regex: categoryName, $options: 'i' }
+  };
+
+  // Price range filter
+  if (minPrice || maxPrice) {
+    query.price = {};
+    if (minPrice) query.price.$gte = parseFloat(minPrice);
+    if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+  }
+
+  // Pagination
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  // Sorting
+  const sortOptions = {};
+  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+  // Execute query
+  const products = await Product.find(query)
+    .populate('owner', 'name email')
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  // Get total count for pagination
+  const totalProducts = await Product.countDocuments(query);
+  const totalPages = Math.ceil(totalProducts / parseInt(limit));
+
+  res.status(200).json({
+    success: true,
+    data: products,
+    category: categoryName,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages,
+      totalProducts,
+      hasNext: parseInt(page) < totalPages,
+      hasPrev: parseInt(page) > 1,
+    },
   });
 });
 
@@ -112,7 +214,7 @@ const updateProduct = asyncHandler(async (req, res, next) => {
     return next(new CustomError(403, "Forbidden: You do not own this product"));
   }
 
-  const { name, description, price, category, stock, is_flash_sale, flash_sale_price, existingImages } = req.body;
+  const { name, description, price, category, stock, is_flash_sale, flash_sale_price, existingImages, is_featured } = req.body;
   const files = req.files;
 
   // Update basic fields
@@ -121,6 +223,7 @@ const updateProduct = asyncHandler(async (req, res, next) => {
   if (price !== undefined) product.price = parseFloat(price);
   if (category !== undefined) product.category = category;
   if (stock !== undefined) product.stock = parseInt(stock);
+  if(is_featured) product.is_featured = is_featured;
 
   // Handle flash sale updates
   if (is_flash_sale !== undefined) {
@@ -229,6 +332,7 @@ export {
   getAllProducts,
   getOneProduct,
   getMyProducts,
+  getProductsByCategory,
   updateProduct,
   deleteProduct,
 };

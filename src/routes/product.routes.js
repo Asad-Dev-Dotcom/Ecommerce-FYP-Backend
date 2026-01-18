@@ -4,6 +4,7 @@ import {
   getAllProducts,
   getOneProduct,
   getMyProducts,
+  getProductsByCategory,
   updateProduct,
   deleteProduct,
 } from "../controllers/product.controller.js";
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // Public routes
 router.get("/", getAllProducts);
+router.get("/category/:categoryName", getProductsByCategory);
 router.get("/:id", getOneProduct);
 
 // Protected routes (require authentication)

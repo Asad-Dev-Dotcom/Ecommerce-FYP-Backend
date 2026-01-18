@@ -237,6 +237,24 @@ const getFeaturedProducts = asyncHandler(async (req, res, next) => {
   })
     .populate("owner", "name")
     .sort({ createdAt: -1 })
+    .limit(4);
+
+  res.status(200).json({
+    success: true,
+    data: products,
+  });
+});
+
+
+// get top 8 our products
+
+const getOurProducts = asyncHandler(async (req, res, next) => {
+
+  const products = await Product.find({
+    stock: { $gt: 0 },
+  })
+    .populate("owner", "name")
+    .sort({ createdAt: -1 })
     .limit(8);
 
   res.status(200).json({
@@ -352,4 +370,5 @@ export {
   getFeaturedProducts,
   getAllProducts,
   getProductsByCategory,
+  getOurProducts
 };

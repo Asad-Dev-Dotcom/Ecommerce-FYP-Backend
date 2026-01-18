@@ -9,6 +9,7 @@ import {
   getFeaturedProducts,
   getAllProducts,
   getProductsByCategory,
+  getOurProducts
 } from "../controllers/home.controller.js";
 
 const router = express.Router();
@@ -23,5 +24,6 @@ router.get("/best-selling/all", getAllBestSellingProducts);
 router.get("/featured", getFeaturedProducts);
 router.get("/products", getAllProducts);
 router.get("/category/products", getProductsByCategory);
+router.get("/our-products", getOurProducts);
 
 export default router;
