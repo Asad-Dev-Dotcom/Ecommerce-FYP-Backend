@@ -16,6 +16,7 @@ import { initSocket, getIo, userSockets } from "./utils/sockets.js";
 import { initNotificationWatcher } from "./utils/notificationWatcher.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { getEnv } from "./configs/config.js";
 
 const app = express();
 
@@ -29,7 +30,7 @@ const io = initSocket(server);
 app.use(
   cors({
     credentials: true,
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173", getEnv("FRONTEND_URL")],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   })
 );
