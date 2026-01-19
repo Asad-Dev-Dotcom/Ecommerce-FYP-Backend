@@ -306,9 +306,77 @@ const getCustomerAnalytics = asyncHandler(async (req, res, next) => {
   });
 });
 
+// Get all users with stats
+const getAllUsers = asyncHandler(async (req, res, next) => {
+  const { page = 1, limit = 10, search = "" } = req.query;
+
+  const pageNumber = parseInt(page);
+  const limitNumber = parseInt(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
+  const searchRegex = new RegExp(search, "i");
+
+  const matchCondition = {
+    $or: [{ name: searchRegex }, { email: searchRegex }],
+    role: "client", // Only list clients, not admins
+  };
+
+  // Get users
+  const users = await Auth.find(matchCondition)
+    .select("name email phone image createdAt")
+    .skip(skip)
+    .limit(limitNumber)
+    .lean();
+
+  // Get total count for pagination
+  const totalUsers = await Auth.countDocuments(matchCondition);
+
+  // Calculate stats for each user
+  const usersWithStats = await Promise.all(
+    users.map(async (user) => {
+      const stats = await Order.aggregate([
+        { $match: { customer: user._id } },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            totalSpent: { $sum: "$totalAmount" },
+          },
+        },
+      ]);
+
+      return {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || "N/A",
+        image: user.image?.url,
+        createdAt: user.createdAt,
+        totalOrders: stats[0]?.totalOrders || 0,
+        totalSpent: stats[0]?.totalSpent || 0,
+      };
+    })
+  );
+
+  res.status(200).json({
+    success: true,
+    data: {
+      users: usersWithStats,
+      totalUsers: totalUsers,
+
+      pagination: {
+        total: totalUsers,
+        page: pageNumber,
+        pages: Math.ceil(totalUsers / limitNumber),
+      },
+    },
+  });
+});
+
 export {
   getDashboardStats,
   getSalesAnalytics,
   getProductAnalytics,
   getCustomerAnalytics,
+  getAllUsers,
 };

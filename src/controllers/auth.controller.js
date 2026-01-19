@@ -243,7 +243,7 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
   if (!req?.body)
     return next(new CustomError(403, "Please Provide at least one field"));
   const formData = req.body;
-  const { name, email, phone, gender, companyName, designation } =
+  const { name, email, phone, gender, companyName, designation, address } =
     formData || {};
   const image = req.file;
   if (
@@ -253,7 +253,8 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
     !gender &&
     !companyName &&
     !designation &&
-    !image
+    !image &&
+    !address
   ) {
     return next(new CustomError(403, "Please Provide at least one field"));
   }
@@ -263,6 +264,18 @@ const updateMyProfile = asyncHandler(async (req, res, next) => {
   if (gender) user.gender = gender;
   if (companyName) user.companyName = companyName;
   if (designation) user.designation = designation;
+  if (address) {
+    // If address is sent as a string (e.g. from FormData), parse it
+    if (typeof address === 'string') {
+      try {
+        user.address = JSON.parse(address);
+      } catch (e) {
+        console.error("Error parsing address:", e);
+      }
+    } else {
+      user.address = address;
+    }
+  }
   if (image) {
     if (user?.image?.public_id)
       await removeFromCloudinary(user?.image?.public_id, "image");

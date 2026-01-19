@@ -32,6 +32,13 @@ const authSchema = new mongoose.Schema(
     refreshToken: { type: String, default: null },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      zipCode: String,
+      country: String,
+    },
   },
   { timestamps: true }
 );

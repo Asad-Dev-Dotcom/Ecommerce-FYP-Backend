@@ -9,6 +9,8 @@ import DashboardRoutes from "./routes/dashboard.routes.js";
 import HomeRoutes from "./routes/home.routes.js";
 import StripeWebhookRoutes from "./routes/stripe-webhook.routes.js";
 import WishlistRoutes from "./routes/wishlist.routes.js";
+import SettingsRoutes from "./routes/settings.routes.js";
+import PaymentRoutes from "./routes/payment.routes.js";
 import cors from "cors";
 import morgan from "morgan";
 import http from "http";
@@ -73,6 +75,8 @@ app.use("/api/orders", OrderRoutes);
 app.use("/api/dashboard", DashboardRoutes);
 app.use("/api/home", HomeRoutes);
 app.use("/api/wishlist", WishlistRoutes);
+app.use("/api/settings", SettingsRoutes);
+app.use("/api/payments", PaymentRoutes);
 app.use("/api/stripeWebhook", StripeWebhookRoutes);
 console.log("sockets ids", userSockets);
 // error handler

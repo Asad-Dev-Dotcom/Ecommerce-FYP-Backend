@@ -51,7 +51,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
     stock: parseInt(stock),
     images,
     owner: ownerId,
-    is_featured: is_featured === true ? true : false,
+    is_featured: is_featured === 'true' || is_featured === true,
   };
 
   // Add flash sale data if provided
@@ -223,7 +223,7 @@ const updateProduct = asyncHandler(async (req, res, next) => {
   if (price !== undefined) product.price = parseFloat(price);
   if (category !== undefined) product.category = category;
   if (stock !== undefined) product.stock = parseInt(stock);
-  if(is_featured) product.is_featured = is_featured;
+  if (is_featured) product.is_featured = is_featured;
 
   // Handle flash sale updates
   if (is_flash_sale !== undefined) {
