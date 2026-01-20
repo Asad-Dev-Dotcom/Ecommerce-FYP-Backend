@@ -70,7 +70,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     items: orderItems,
     totalAmount,
     shippingAddress,
-    paymentMethod : paymentMethod === "online" ? "online" : "cash_on_delivery",
+    paymentMethod: paymentMethod === "online" ? "online" : "cash_on_delivery",
   });
 
   // Populate customer and product details
@@ -84,7 +84,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
       shippingAddress: JSON.stringify(shippingAddress),
       paymentMethod: paymentMethod.toString(),
     }
-    const response = await createCheckoutSession(orderItems, `${getEnv("FRONTEND_URL")}/payment/success`, `${getEnv("FRONTEND_URL")}/payment/cancel`, metaData);
+    const response = await createCheckoutSession(orderItems, `${getEnv("FRONTEND_URL")}/orders`, `${getEnv("FRONTEND_URL")}/orders`, metaData);
     if (!response.success) {
       return next(new CustomError(500, response.error));
     }
@@ -111,7 +111,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     return res.status(201).json({
       success: true,
       message: "Order placed successfully",
-      data: newOrder,paymentIntent,
+      data: newOrder, paymentIntent,
     });
   }
 });
